@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ডট গেম (Dots & Boxes) - অনলাইন মাল্টিপ্লেয়ার ও AI</title>
+  <script type="text/javascript" src="https://ff.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=bl8xQ7l5wEb_44JtD1rqxMoCo95KQJRoJHjIgf3Ty_5_2lB9schtkI81NyBZc0S1Ph7DlgClH7PrwbZ2UgcSdxLoawndbFqbMqC4P9_CLwLH32YbWWKjOx84AWv_OfOU_hSWWaYCFmNBL6hNSMgk9WsSlUeuRmbNxsY2QgZrriFy0pkcx2CukYEOpEa1ohTaHeyqdGciNlmmSXfwpp1kec8GMQ4h-3YJDTOWKdHqKiAJfyfRGva4Hm3pHSGy7eTUj-SgbNPKIm2QRODvzvkrQ6x6TFZkv8n5hro_6OScAQPlBajvAhOqb_kSvI0J5eV_wHqIBEzglPDm39ygNX4LOA" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://ff.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24udXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVUJJTmNtVnpjRzl1YzJWZlpHRjBZUm9fQ2pCak5qYzNPREZoWVRKak1UWmtNR1ZtTURBd05qWXdZelJpTlRBMVlUSmtZVEExTW1Vek9HWTJNV013WTJFek1ETVNDeElIRUlqOXV0Ni1IUmdCJmZpbGVuYW1lPWRvdF9nYW1lX211bHRpcGxheWVyLmh0bWwmb3BpPTEwMzEzNTA1MA"/><script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Hind Siliguri', 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at top left, #0f172a, #020617 75%);
+      color: #f8fafc;
+      min-height: 100vh;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .edge-hit {
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .edge-hit:hover .edge-preview {
+      opacity: 0.55;
+    }
+    .edge-preview {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      75% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .box-pop {
+      animation: popIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    input[type="range"] {
+      accent-color: #38bdf8;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-between p-3 sm:p-5">
+
+  <!-- Top Header -->
+  <header class="w-full max-w-3xl flex items-center justify-between gap-2 mb-3">
+    <div class="flex items-center gap-2.5">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-rose-500 flex items-center justify-center shadow-lg shadow-sky-500/20 font-extrabold text-white text-lg">
+        •—•
+      </div>
+      <div>
+        <h1 id="appTitle" class="text-lg sm:text-xl font-bold tracking-tight leading-tight text-white">ডট গেম (Dots &amp; Boxes)</h1>
+        <p id="appSubtitle" class="text-xs text-slate-400">অনলাইন মাল্টিপ্লেয়ার ও কম্পিউটার AI</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="soundToggleBtn" onclick="toggleSound()" class="glass px-3 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-200 hover:bg-slate-800/80 transition flex items-center gap-1.5" title="Sound">
+        <span id="soundIcon">🔊</span>
+        <span id="soundLabel" class="hidden sm:inline">সাউন্ড</span>
+      </button>
+      <button id="langToggleBtn" onclick="toggleLanguage()" class="glass px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-sky-300 hover:bg-slate-800/80 transition">
+        English
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="w-full max-w-3xl flex-1 flex flex-col items-center justify-center my-auto">
+
+    <!-- LOBBY SCREEN -->
+    <section id="lobbyScreen" class="w-full max-w-md glass rounded-2xl p-5 sm:p-6 shadow-2xl">
+      <!-- Name Input -->
+      <div class="mb-4">
+        <label id="lblPlayerName" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">আপনার নাম</label>
+        <input id="playerNameInput" type="text" maxlength="16" placeholder="যেমন: সাকিব"
+          class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition" />
+      </div>
+
+      <!-- Mode Tabs -->
+      <div class="grid grid-cols-3 gap-1.5 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800/80 mb-5">
+        <button id="tabCreate" onclick="switchTab('create')" class="py-2 px-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-sky-600 text-white shadow">
+          ➕ রুম তৈরি
+        </button>
+        <button id="tabJoin" onclick="switchTab('join')" class="py-2 px-2 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white">
+          🔗 রুম যোগদান
+        </button>
+        <button id="tabAi" onclick="switchTab('ai')" class="py-2 px-2 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white">
+          🤖 কম্পিউটার
+        </button>
+      </div>
+
+      <!-- Grid Size Customizer (Shown on Create & AI tabs) -->
+      <div id="gridSettingsPanel" class="bg-slate-900/65 border border-slate-800 rounded-xl p-4 mb-5">
+        <div class="flex items-center justify-between mb-2">
+          <span id="lblGridSize" class="text-xs font-semibold uppercase tracking-wider text-slate-300">বোর্ডের ঘর সংখ্যা (বক্স)</span>
+          <span id="gridBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">৪ × ৪ বক্স</span>
+        </div>
+
+        <!-- Presets -->
+        <div class="grid grid-cols-4 gap-1.5 mb-3">
+          <button type="button" onclick="setPresetGrid(3,3)" class="preset-btn py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/70 transition">৩×৩</button>
+          <button type="button" onclick="setPresetGrid(4,4)" class="preset-btn py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/70 transition">৪×৪</button>
+          <button type="button" onclick="setPresetGrid(5,5)" class="preset-btn py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/70 transition">৫×৫</button>
+          <button type="button" onclick="setPresetGrid(7,7)" class="preset-btn py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/70 transition">৭×৭</button>
+        </div>
+
+        <!-- Custom Sliders -->
+        <div class="space-y-2.5">
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span id="lblRows">সারি (Rows)</span>
+              <span id="rowsVal" class="font-bold text-slate-200">4</span>
+            </div>
+            <input id="rowsSlider" type="range" min="2" max="10" value="4" oninput="updateGridFromSliders()" class="w-full h-1.5 bg-slate-700 rounded-lg cursor-pointer" />
+          </div>
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span id="lblCols">কলাম (Columns)</span>
+              <span id="colsVal" class="font-bold text-slate-200">4</span>
+            </div>
+            <input id="colsSlider" type="range" min="2" max="10" value="4" oninput="updateGridFromSliders()" class="w-full h-1.5 bg-slate-700 rounded-lg cursor-pointer" />
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 1: CREATE ROOM -->
+      <div id="panelCreate">
+        <button id="createRoomBtn" onclick="createOnlineRoom()" class="w-full py-3 rounded-xl font-bold text-sm sm:text-base bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white shadow-lg shadow-sky-500/25 transition active:scale-[0.99]">
+          নতুন রুম তৈরি করুন
+        </button>
+        <p id="createHint" class="text-[11px] text-slate-400 text-center mt-2.5">
+          রুম তৈরি করে ৫-সংখ্যার কোডটি আপনার বন্ধুকে দিন, তিনি অন্য ডিভাইস থেকে যুক্ত হতে পারবেন।
+        </p>
+      </div>
+
+      <!-- TAB 2: JOIN ROOM -->
+      <div id="panelJoin" class="hidden">
+        <label id="lblRoomCode" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">৫-সংখ্যার রুম কোড</label>
+        <input id="roomCodeInput" type="text" maxlength="5" inputmode="numeric" placeholder="যেমন: 48291"
+          class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-3 text-center text-xl font-extrabold tracking-[0.35em] text-sky-300 placeholder-slate-600 focus:outline-none focus:border-sky-500 mb-4" />
+        <button id="joinRoomBtn" onclick="joinOnlineRoom()" class="w-full py-3 rounded-xl font-bold text-sm sm:text-base bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/25 transition active:scale-[0.99]">
+          রুমে যোগ দিন
+        </button>
+      </div>
+
+      <!-- TAB 3: PLAY VS AI -->
+      <div id="panelAi" class="hidden">
+        <label id="lblAiLevel" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">কম্পিউটারের বুদ্ধিমত্তা (AI Level)</label>
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <button type="button" onclick="selectAiLevel('easy')" id="aiEasyBtn" class="ai-lvl-btn py-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-900 text-slate-300 transition">
+            সহজ (Easy)
+          </button>
+          <button type="button" onclick="selectAiLevel('medium')" id="aiMediumBtn" class="ai-lvl-btn py-2 rounded-xl text-xs font-bold border border-sky-500 bg-sky-500/20 text-sky-300 transition">
+            মাঝারি (Medium)
+          </button>
+          <button type="button" onclick="selectAiLevel('hard')" id="aiHardBtn" class="ai-lvl-btn py-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-900 text-slate-300 transition">
+            কঠিন (Hard)
+          </button>
+        </div>
+        <button id="startAiBtn" onclick="startAiGame()" class="w-full py-3 rounded-xl font-bold text-sm sm:text-base bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 transition active:scale-[0.99]">
+          কম্পিউটারের সাথে খেলা শুরু করুন
+        </button>
+      </div>
+
+      <!-- Status / Error Message -->
+      <div id="lobbyStatus" class="hidden mt-4 p-3 rounded-xl text-xs font-medium text-center bg-rose-500/15 border border-rose-500/30 text-rose-300"></div>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="gameScreen" class="hidden w-full flex flex-col items-center">
+
+      <!-- Room Info Bar (Only for Online Mode) -->
+      <div id="onlineRoomBar" class="hidden w-full max-w-xl glass rounded-xl px-3.5 py-2.5 mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span id="lblRoomTag" class="text-xs text-slate-400">রুম কোড:</span>
+          <span id="displayRoomCode" class="font-mono font-extrabold text-base sm:text-lg tracking-widest text-amber-300 bg-slate-900 px-2.5 py-0.5 rounded-lg border border-slate-700">-----</span>
+          <button onclick="copyRoomCode()" id="copyCodeBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 transition">
+            কপি কোড
+          </button>
+          <button onclick="copyInviteLink()" id="copyLinkBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-emerald-300 transition">
+            লিংক শেয়ার
+          </button>
+        </div>
+        <div id="connectionBadge" class="text-xs font-medium text-amber-300 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <span id="connectionText">অন্য প্লেয়ারের জন্য অপেক্ষা করা হচ্ছে...</span>
+        </div>
+      </div>
+
+      <!-- Scoreboard & Turn Indicator -->
+      <div class="w-full max-w-xl grid grid-cols-3 items-center gap-2 sm:gap-3 mb-3">
+        <!-- Player 1 Card -->
+        <div id="p1Card" class="glass rounded-2xl p-3 border-2 border-sky-500 transition-all">
+          <div class="flex items-center justify-between mb-1">
+            <span class="w-3 h-3 rounded-full bg-sky-400 shadow shadow-sky-400/50"></span>
+            <span id="p1Badge" class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">P1</span>
+          </div>
+          <div id="p1NameDisplay" class="text-xs sm:text-sm font-bold text-white truncate">প্লেয়ার ১</div>
+          <div id="p1ScoreDisplay" class="text-2xl sm:text-3xl font-extrabold text-sky-400 leading-none mt-1">0</div>
+        </div>
+
+        <!-- Center Turn / Status -->
+        <div class="flex flex-col items-center justify-center text-center px-1">
+          <div id="turnIndicator" class="px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow">
+            আপনার চাল
+          </div>
+          <div id="boardDimLabel" class="text-[11px] text-slate-400 mt-1.5 font-medium">৪ × ৪ বক্স</div>
+        </div>
+
+        <!-- Player 2 Card -->
+        <div id="p2Card" class="glass rounded-2xl p-3 border-2 border-transparent transition-all">
+          <div class="flex items-center justify-between mb-1">
+            <span id="p2Badge" class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">P2</span>
+            <span class="w-3 h-3 rounded-full bg-rose-400 shadow shadow-rose-400/50"></span>
+          </div>
+          <div id="p2NameDisplay" class="text-xs sm:text-sm font-bold text-white truncate text-right">প্লেয়ার ২</div>
+          <div id="p2ScoreDisplay" class="text-2xl sm:text-3xl font-extrabold text-rose-400 leading-none mt-1 text-right">0</div>
+        </div>
+      </div>
+
+      <!-- Game Board Container -->
+      <div class="w-full max-w-xl glass rounded-2xl p-3 sm:p-5 flex items-center justify-center shadow-2xl relative">
+        <svg id="boardSvg" class="w-full h-auto max-h-[62vh] select-none overflow-visible" viewBox="0 0 400 400"></svg>
+      </div>
+
+      <!-- Bottom Game Controls -->
+      <div class="w-full max-w-xl flex items-center justify-between gap-3 mt-3">
+        <button onclick="leaveGame()" id="leaveBtn" class="glass px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:bg-slate-800 transition">
+          ← লবিতে ফিরে যান
+        </button>
+        <button onclick="requestRematch()" id="rematchBtn" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition">
+          🔄 আবার খেলুন
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Game Over Modal -->
+  <div id="winnerModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center border border-slate-700 shadow-2xl">
+      <div id="winnerEmoji" class="text-5xl mb-3">🏆</div>
+      <h2 id="winnerTitle" class="text-2xl font-extrabold text-white mb-1">খেলা শেষ!</h2>
+      <p id="winnerSubtitle" class="text-sm text-slate-300 mb-5">প্লেয়ার ১ জয়ী হয়েছে!</p>
+
+      <div class="grid grid-cols-2 gap-3 bg-slate-900/80 rounded-2xl p-3.5 mb-6 border border-slate-800">
+        <div>
+          <div id="modalP1Name" class="text-xs text-slate-400 truncate">প্লেয়ার ১</div>
+          <div id="modalP1Score" class="text-2xl font-extrabold text-sky-400">0</div>
+        </div>
+        <div>
+          <div id="modalP2Name" class="text-xs text-slate-400 truncate">প্লেয়ার ২</div>
+          <div id="modalP2Score" class="text-2xl font-extrabold text-rose-400">0</div>
+        </div>
+      </div>
+
+      <div class="flex gap-2.5">
+        <button onclick="leaveGame()" id="modalLobbyBtn" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+          লবি
+        </button>
+        <button onclick="requestRematch()" id="modalRematchBtn" class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white shadow-lg transition">
+          আবার খেলুন
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-800 border border-slate-600 text-xs sm:text-sm font-semibold text-white shadow-xl opacity-0 pointer-events-none transition-opacity duration-200">
+    কপি করা হয়েছে!
+  </div>
+
+  <!-- Firebase SDK (Modular v10) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Your Firebase Configuration (dot-gamje)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDfEr7BWR0HIF8XCXgLKb1g69-iBBvcEzo",
+      authDomain: "dot-gamje.firebaseapp.com",
+      projectId: "dot-gamje",
+      storageBucket: "dot-gamje.firebasestorage.app",
+      messagingSenderId: "284960337589",
+      appId: "1:284960337589:web:82c2c00aa820100610d8fc",
+      measurementId: "G-FKSW5MCYM5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Expose Firestore helpers to global scope
+    window.fb = { db, doc, setDoc, getDoc, updateDoc, onSnapshot };
+  </script>
+
+  <script>
+    // ==================== STATE & I18N ====================
+    let lang = 'bn';
+    let soundEnabled = true;
+    let currentTab = 'create';
+    let aiLevel = 'medium';
+
+    // Game State
+    let gameMode = null; // 'online' | 'ai'
+    let myRole = 1; // 1 or 2
+    let roomCode = null;
+    let unsubscribeRoom = null;
+    let aiTimeout = null;
+
+    let rows = 4; // number of box rows
+    let cols = 4; // number of box cols
+    let hEdges = {}; // "r,c" -> 1 | 2
+    let vEdges = {}; // "r,c" -> 1 | 2
+    let boxes = {};  // "r,c" -> 1 | 2
+    let turn = 1;    // 1 | 2
+    let scores = { 1: 0, 2: 0 };
+    let p1Name = 'প্লেয়ার ১';
+    let p2Name = 'প্লেয়ার ২';
+    let status = 'waiting'; // 'waiting' | 'playing' | 'finished'
+
+    const i18n = {
+      bn: {
+        appTitle: 'ডট গেম (Dots & Boxes)',
+        appSubtitle: 'অনলাইন মাল্টিপ্লেয়ার ও কম্পিউটার AI',
+        soundLabel: 'সাউন্ড',
+        langBtn: 'English',
+        lblPlayerName: 'আপনার নাম',
+        namePlaceholder: 'যেমন: সাকিব',
+        tabCreate: '➕ রুম তৈরি',
+        tabJoin: '🔗 রুম যোগদান',
+        tabAi: '🤖 কম্পিউটার',
+        lblGridSize: 'বোর্ডের ঘর সংখ্যা (বক্স)',
+        lblRows: 'সারি (Rows)',
+        lblCols: 'কলাম (Columns)',
+        createRoomBtn: 'নতুন রুম তৈরি করুন',
+        createHint: 'রুম তৈরি করে ৫-সংখ্যার কোডটি আপনার বন্ধুকে দিন, তিনি অন্য ডিভাইস থেকে যুক্ত হতে পারবেন।',
+        lblRoomCode: '৫-সংখ্যার রুম কোড',
+        joinRoomBtn: 'রুমে যোগ দিন',
+        lblAiLevel: 'কম্পিউটারের বুদ্ধিমত্তা (AI Level)',
+        startAiBtn: 'কম্পিউটারের সাথে খেলা শুরু করুন',
+        lblRoomTag: 'রুম কোড:',
+        copyCodeBtn: 'কপি কোড',
+        copyLinkBtn: 'লিংক শেয়ার',
+        waitingOpponent: 'অন্য প্লেয়ারের জন্য অপেক্ষা করা হচ্ছে...',
+        connectedOpponent: 'দুজন প্লেয়ারই যুক্ত হয়েছেন!',
+        yourTurn: 'আপনার চাল',
+        oppTurn: 'প্রতিপক্ষের চাল',
+        aiTurn: 'কম্পিউটার ভাবছে...',
+        leaveBtn: '← লবিতে ফিরে যান',
+        rematchBtn: '🔄 আবার খেলুন',
+        gameOver: 'খেলা শেষ!',
+        drawGame: 'ম্যাচ ড্র হয়েছে! 🤝',
+        wonSuffix: 'জয়ী হয়েছে! 🎉',
+        modalLobbyBtn: 'লবি',
+        modalRematchBtn: 'আবার খেলুন',
+        defaultP1: 'প্লেয়ার ১',
+        defaultP2: 'প্লেয়ার ২',
+        aiNameEasy: 'কম্পিউটার (সহজ)',
+        aiNameMedium: 'কম্পিউটার (মাঝারি)',
+        aiNameHard: 'কম্পিউটার (কঠিন)',
+        errInvalidCode: 'সঠিক ৫-সংখ্যার রুম কোড দিন।',
+        errRoomNotFound: 'এই রুম কোডটি খুঁজে পাওয়া যায়নি!',
+        errRoomFull: 'এই রুমে ইতিমধ্যে ২ জন প্লেয়ার যুক্ত আছেন।',
+        errFirebase: 'ডাটাবেজ সংযোগে সমস্যা হচ্ছে। ইন্টারনেট ও Firestore Rules চেক করুন।',
+        copiedCode: 'রুম কোড কপি হয়েছে!',
+        copiedLink: 'ইনভাইট লিংক কপি হয়েছে!',
+        boxesText: 'বক্স'
+      },
+      en: {
+        appTitle: 'Dots & Boxes',
+        appSubtitle: 'Online Multiplayer & Smart AI',
+        soundLabel: 'Sound',
+        langBtn: 'বাংলা',
+        lblPlayerName: 'Your Name',
+        namePlaceholder: 'e.g. Alex',
+        tabCreate: '➕ Create Room',
+        tabJoin: '🔗 Join Room',
+        tabAi: '🤖 vs Computer',
+        lblGridSize: 'Board Size (Boxes)',
+        lblRows: 'Rows',
+        lblCols: 'Columns',
+        createRoomBtn: 'Create New Room',
+        createHint: 'Create a room and share the 5-digit code with your friend to play from another device.',
+        lblRoomCode: '5-Digit Room Code',
+        joinRoomBtn: 'Join Room',
+        lblAiLevel: 'Computer Difficulty (AI)',
+        startAiBtn: 'Start Game vs Computer',
+        lblRoomTag: 'Room Code:',
+        copyCodeBtn: 'Copy Code',
+        copyLinkBtn: 'Share Link',
+        waitingOpponent: 'Waiting for Player 2 to join...',
+        connectedOpponent: 'Both players connected!',
+        yourTurn: 'Your Turn',
+        oppTurn: "Opponent's Turn",
+        aiTurn: 'Computer thinking...',
+        leaveBtn: '← Back to Lobby',
+        rematchBtn: '🔄 Play Again',
+        gameOver: 'Game Over!',
+        drawGame: "It's a Draw! 🤝",
+        wonSuffix: 'Wins! 🎉',
+        modalLobbyBtn: 'Lobby',
+        modalRematchBtn: 'Play Again',
+        defaultP1: 'Player 1',
+        defaultP2: 'Player 2',
+        aiNameEasy: 'Computer (Easy)',
+        aiNameMedium: 'Computer (Medium)',
+        aiNameHard: 'Computer (Hard)',
+        errInvalidCode: 'Please enter a valid 5-digit room code.',
+        errRoomNotFound: 'Room not found! Check the code.',
+        errRoomFull: 'This room already has 2 players.',
+        errFirebase: 'Database connection error. Check internet & Firestore rules.',
+        copiedCode: 'Room code copied!',
+        copiedLink: 'Invite link copied!',
+        boxesText: 'Boxes'
+      }
+    };
+
+    function t(key) {
+      return i18n[lang][key] || key;
+    }
+
+    function toLocalNum(n) {
+      if (lang === 'en') return String(n);
+      const map = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+      return String(n).replace(/\d/g, d => map[d]);
+    }
+
+    function applyLanguage() {
+      document.getElementById('appTitle').textContent = t('appTitle');
+      document.getElementById('appSubtitle').textContent = t('appSubtitle');
+      document.getElementById('soundLabel').textContent = t('soundLabel');
+      document.getElementById('langToggleBtn').textContent = t('langBtn');
+      document.getElementById('lblPlayerName').textContent = t('lblPlayerName');
+      document.getElementById('playerNameInput').placeholder = t('namePlaceholder');
+      document.getElementById('tabCreate').textContent = t('tabCreate');
+      document.getElementById('tabJoin').textContent = t('tabJoin');
+      document.getElementById('tabAi').textContent = t('tabAi');
+      document.getElementById('lblGridSize').textContent = t('lblGridSize');
+      document.getElementById('lblRows').textContent = t('lblRows');
+      document.getElementById('lblCols').textContent = t('lblCols');
+      document.getElementById('createRoomBtn').textContent = t('createRoomBtn');
+      document.getElementById('createHint').textContent = t('createHint');
+      document.getElementById('lblRoomCode').textContent = t('lblRoomCode');
+      document.getElementById('joinRoomBtn').textContent = t('joinRoomBtn');
+      document.getElementById('lblAiLevel').textContent = t('lblAiLevel');
+      document.getElementById('startAiBtn').textContent = t('startAiBtn');
+      document.getElementById('lblRoomTag').textContent = t('lblRoomTag');
+      document.getElementById('copyCodeBtn').textContent = t('copyCodeBtn');
+      document.getElementById('copyLinkBtn').textContent = t('copyLinkBtn');
+      document.getElementById('leaveBtn').textContent = t('leaveBtn');
+      document.getElementById('rematchBtn').textContent = t('rematchBtn');
+      document.getElementById('modalLobbyBtn').textContent = t('modalLobbyBtn');
+      document.getElementById('modalRematchBtn').textContent = t('modalRematchBtn');
+      updateGridBadge();
+      if (!document.getElementById('gameScreen').classList.contains('hidden')) {
+        updateGameUI();
+      }
+    }
+
+    function toggleLanguage() {
+      lang = lang === 'bn' ? 'en' : 'bn';
+      applyLanguage();
+    }
+
+    // ==================== SOUND SYNTHESIZER ====================
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTone(freq, type = 'sine', duration = 0.09, vol = 0.12) {
+      if (!soundEnabled) return;
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playLineSound() { playTone(520, 'triangle', 0.08, 0.14); }
+    function playBoxSound() {
+      playTone(587.33, 'sine', 0.12, 0.16);
+      setTimeout(() => playTone(880, 'sine', 0.18, 0.16), 70);
+    }
+    function playWinSound() {
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+        setTimeout(() => playTone(f, 'triangle', 0.22, 0.16), idx * 100);
+      });
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundIcon').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 2000);
+    }
+
+    function showLobbyError(msg) {
+      const el = document.getElementById('lobbyStatus');
+      if (!msg) {
+        el.classList.add('hidden');
+        return;
+      }
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    // ==================== LOBBY CONTROLS ====================
+    function switchTab(tab) {
+      currentTab = tab;
+      showLobbyError('');
+      ['create', 'join', 'ai'].forEach(name => {
+        const btn = document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1));
+        const panel = document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1));
+        if (name === tab) {
+          btn.className = 'py-2 px-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-sky-600 text-white shadow';
+          panel.classList.remove('hidden');
+        } else {
+          btn.className = 'py-2 px-2 rounded-lg text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white';
+          panel.classList.add('hidden');
+        }
+      });
+
+      const gridPanel = document.getElementById('gridSettingsPanel');
+      if (tab === 'join') {
+        gridPanel.classList.add('hidden');
+      } else {
+        gridPanel.classList.remove('hidden');
+      }
+    }
+
+    function updateGridBadge() {
+      const r = parseInt(document.getElementById('rowsSlider').value, 10);
+      const c = parseInt(document.getElementById('colsSlider').value, 10);
+      document.getElementById('rowsVal').textContent = toLocalNum(r);
+      document.getElementById('colsVal').textContent = toLocalNum(c);
+      document.getElementById('gridBadge').textContent = `${toLocalNum(r)} × ${toLocalNum(c)} ${t('boxesText')}`;
+    }
+
+    function updateGridFromSliders() {
+      rows = parseInt(document.getElementById('rowsSlider').value, 10);
+      cols = parseInt(document.getElementById('colsSlider').value, 10);
+      updateGridBadge();
+    }
+
+    function setPresetGrid(r, c) {
+      document.getElementById('rowsSlider').value = r;
+      document.getElementById('colsSlider').value = c;
+      updateGridFromSliders();
+    }
+
+    function selectAiLevel(lvl) {
+      aiLevel = lvl;
+      ['easy', 'medium', 'hard'].forEach(l => {
+        const btn = document.getElementById('ai' + l.charAt(0).toUpperCase() + l.slice(1) + 'Btn');
+        if (l === lvl) {
+          btn.className = 'ai-lvl-btn py-2 rounded-xl text-xs font-bold border border-sky-500 bg-sky-500/20 text-sky-300 transition';
+        } else {
+          btn.className = 'ai-lvl-btn py-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-900 text-slate-300 transition';
+        }
+      });
+    }
+
+    function getEnteredName(fallback) {
+      const val = document.getElementById('playerNameInput').value.trim();
+      if (val) {
+        localStorage.setItem('dot_game_player_name', val);
+        return val;
+      }
+      return fallback;
+    }
+
+    // ==================== CORE GAME LOGIC ====================
+    function resetBoardState(r, c) {
+      rows = r;
+      cols = c;
+      hEdges = {};
+      vEdges = {};
+      boxes = {};
+      turn = 1;
+      scores = { 1: 0, 2: 0 };
+      status = 'playing';
+      document.getElementById('winnerModal').classList.add('hidden');
+    }
+
+    function checkCompletedBoxes(type, r, c, player) {
+      let completed = 0;
+      const tryClaimBox = (br, bc) => {
+        if (br < 0 || br >= rows || bc < 0 || bc >= cols) return false;
+        const key = `${br},${bc}`;
+        if (boxes[key]) return false;
+        const top = hEdges[`${br},${bc}`];
+        const bottom = hEdges[`${br + 1},${bc}`];
+        const left = vEdges[`${br},${bc}`];
+        const right = vEdges[`${br},${bc + 1}`];
+        if (top && bottom && left && right) {
+          boxes[key] = player;
+          scores[player] = (scores[player] || 0) + 1;
+          completed++;
+          return true;
+        }
+        return false;
+      };
+
+      if (type === 'h') {
+        tryClaimBox(r - 1, c);
+        tryClaimBox(r, c);
+      } else {
+        tryClaimBox(r, c - 1);
+        tryClaimBox(r, c);
+      }
+      return completed;
+    }
+
+    function isBoardFull() {
+      return Object.keys(boxes).length === rows * cols;
+    }
+
+    async function handleMove(type, r, c) {
+      if (status !== 'playing') return;
+      if (gameMode === 'online' && turn !== myRole) return;
+      if (gameMode === 'ai' && turn !== 1) return;
+
+      const key = `${r},${c}`;
+      if (type === 'h' && hEdges[key]) return;
+      if (type === 'v' && vEdges[key]) return;
+
+      await applyMove(type, r, c, turn, true);
+    }
+
+    async function applyMove(type, r, c, player, syncToCloud) {
+      const key = `${r},${c}`;
+      if (type === 'h') hEdges[key] = player;
+      else vEdges[key] = player;
+
+      const gained = checkCompletedBoxes(type, r, c, player);
+      if (gained > 0) playBoxSound();
+      else playLineSound();
+
+      if (isBoardFull()) {
+        status = 'finished';
+      } else if (gained === 0) {
+        turn = player === 1 ? 2 : 1;
+      }
+
+      renderBoard();
+      updateGameUI();
+
+      if (status === 'finished') {
+        playWinSound();
+        showWinnerModal();
+      }
+
+      if (syncToCloud && gameMode === 'online' && roomCode && window.fb) {
+        try {
+          const roomRef = window.fb.doc(window.fb.db, 'dot_rooms', roomCode);
+          await window.fb.updateDoc(roomRef, {
+            hEdges,
+            vEdges,
+            boxes,
+            turn,
+            scores,
+            status
+          });
+        } catch (err) {
+          console.error('Sync error:', err);
+        }
+      }
+
+      if (gameMode === 'ai' && status === 'playing' && turn === 2) {
+        clearTimeout(aiTimeout);
+        aiTimeout = setTimeout(makeAiMove, 420);
+      }
+    }
+
+    // ==================== AI OPPONENT ====================
+    function getAllAvailableMoves() {
+      const moves = [];
+      for (let r = 0; r <= rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (!hEdges[`${r},${c}`]) moves.push({ type: 'h', r, c });
+        }
+      }
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c <= cols; c++) {
+          if (!vEdges[`${r},${c}`]) moves.push({ type: 'v', r, c });
+        }
+      }
+      return moves;
+    }
+
+    function countBoxEdges(br, bc) {
+      let cnt = 0;
+      if (hEdges[`${br},${bc}`]) cnt++;
+      if (hEdges[`${br + 1},${bc}`]) cnt++;
+      if (vEdges[`${br},${bc}`]) cnt++;
+      if (vEdges[`${br},${bc + 1}`]) cnt++;
+      return cnt;
+    }
+
+    function evaluateMove(move) {
+      // Temporarily place edge
+      const key = `${move.r},${move.c}`;
+      if (move.type === 'h') hEdges[key] = 2;
+      else vEdges[key] = 2;
+
+      const adj = move.type === 'h'
+        ? [[move.r - 1, move.c], [move.r, move.c]]
+        : [[move.r, move.c - 1], [move.r, move.c]];
+
+      let completes = 0;
+      let givesThirdSide = 0;
+
+      for (const [br, bc] of adj) {
+        if (br >= 0 && br < rows && bc >= 0 && bc < cols) {
+          const cnt = countBoxEdges(br, bc);
+          if (cnt === 4) completes++;
+          else if (cnt === 3) givesThirdSide++;
+        }
+      }
+
+      // Undo temporary edge
+      if (move.type === 'h') delete hEdges[key];
+      else delete vEdges[key];
+
+      return { completes, givesThirdSide };
+    }
+
+    function makeAiMove() {
+      if (gameMode !== 'ai' || status !== 'playing' || turn !== 2) return;
+      const moves = getAllAvailableMoves();
+      if (moves.length === 0) return;
+
+      let chosen = null;
+
+      if (aiLevel === 'easy') {
+        chosen = moves[Math.floor(Math.random() * moves.length)];
+      } else {
+        const scoringMoves = [];
+        const safeMoves = [];
+        const riskyMoves = [];
+
+        for (const m of moves) {
+          const res = evaluateMove(m);
+          if (res.completes > 0) scoringMoves.push({ m, score: res.completes });
+          else if (res.givesThirdSide === 0) safeMoves.push(m);
+          else riskyMoves.push({ m, risk: res.givesThirdSide });
+        }
+
+        if (scoringMoves.length > 0) {
+          scoringMoves.sort((a, b) => b.score - a.score);
+          chosen = scoringMoves[0].m;
+        } else if (safeMoves.length > 0) {
+          chosen = safeMoves[Math.floor(Math.random() * safeMoves.length)];
+        } else {
+          if (aiLevel === 'hard') {
+            riskyMoves.sort((a, b) => a.risk - b.risk);
+            chosen = riskyMoves[0].m;
+          } else {
+            chosen = moves[Math.floor(Math.random() * moves.length)];
+          }
+        }
+      }
+
+      if (chosen) {
+        applyMove(chosen.type, chosen.r, chosen.c, 2, false);
+      }
+    }
+
+    // ==================== START MODES ====================
+    function startAiGame() {
+      showLobbyError('');
+      gameMode = 'ai';
+      myRole = 1;
+      roomCode = null;
+      p1Name = getEnteredName(t('defaultP1'));
+      p2Name = aiLevel === 'easy' ? t('aiNameEasy') : aiLevel === 'hard' ? t('aiNameHard') : t('aiNameMedium');
+
+      resetBoardState(rows, cols);
+      document.getElementById('onlineRoomBar').classList.add('hidden');
+      showGameScreen();
+    }
+
+    async function createOnlineRoom() {
+      showLobbyError('');
+      if (!window.fb) {
+        showLobbyError(t('errFirebase'));
+        return;
+      }
+
+      const btn = document.getElementById('createRoomBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-60');
+
+      try {
+        const code = String(Math.floor(10000 + Math.random() * 90000));
+        p1Name = getEnteredName(t('defaultP1'));
+        p2Name = t('defaultP2');
+
+        gameMode = 'online';
+        myRole = 1;
+        roomCode = code;
+
+        resetBoardState(rows, cols);
+        status = 'waiting';
+
+        const roomRef = window.fb.doc(window.fb.db, 'dot_rooms', code);
+        await window.fb.setDoc(roomRef, {
+          rows,
+          cols,
+          p1Name,
+          p2Name: '',
+          hEdges: {},
+          vEdges: {},
+          boxes: {},
+          turn: 1,
+          scores: { 1: 0, 2: 0 },
+          status: 'waiting',
+          createdAt: Date.now()
+        });
+
+        listenToRoom(code);
+        document.getElementById('onlineRoomBar').classList.remove('hidden');
+        document.getElementById('displayRoomCode').textContent = code;
+        showGameScreen();
+      } catch (err) {
+        console.error(err);
+        showLobbyError(t('errFirebase'));
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60');
+      }
+    }
+
+    async function joinOnlineRoom() {
+      showLobbyError('');
+      const code = document.getElementById('roomCodeInput').value.trim();
+      if (!/^\d{5}$/.test(code)) {
+        showLobbyError(t('errInvalidCode'));
+        return;
+      }
+      if (!window.fb) {
+        showLobbyError(t('errFirebase'));
+        return;
+      }
+
+      const btn = document.getElementById('joinRoomBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-60');
+
+      try {
+        const roomRef = window.fb.doc(window.fb.db, 'dot_rooms', code);
+        const snap = await window.fb.getDoc(roomRef);
+
+        if (!snap.exists()) {
+          showLobbyError(t('errRoomNotFound'));
+          return;
+        }
+
+        const data = snap.data();
+        if (data.p2Name && data.status !== 'waiting') {
+          showLobbyError(t('errRoomFull'));
+          return;
+        }
+
+        const joinerName = getEnteredName(t('defaultP2'));
+        gameMode = 'online';
+        myRole = 2;
+        roomCode = code;
+
+        await window.fb.updateDoc(roomRef, {
+          p2Name: joinerName,
+          status: 'playing'
+        });
+
+        listenToRoom(code);
+        document.getElementById('onlineRoomBar').classList.remove('hidden');
+        document.getElementById('displayRoomCode').textContent = code;
+        showGameScreen();
+      } catch (err) {
+        console.error(err);
+        showLobbyError(t('errFirebase'));
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60');
+      }
+    }
+
+    function listenToRoom(code) {
+      if (unsubscribeRoom) unsubscribeRoom();
+      const roomRef = window.fb.doc(window.fb.db, 'dot_rooms', code);
+      unsubscribeRoom = window.fb.onSnapshot(roomRef, (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        const prevBoxesCount = Object.keys(boxes).length;
+        const prevEdgesCount = Object.keys(hEdges).length + Object.keys(vEdges).length;
+
+        rows = data.rows || 4;
+        cols = data.cols || 4;
+        hEdges = data.hEdges || {};
+        vEdges = data.vEdges || {};
+        boxes = data.boxes || {};
+        turn = data.turn || 1;
+        scores = data.scores || { 1: 0, 2: 0 };
+        p1Name = data.p1Name || t('defaultP1');
+        p2Name = data.p2Name || t('defaultP2');
+        const oldStatus = status;
+        status = data.status || 'waiting';
+
+        const newBoxesCount = Object.keys(boxes).length;
+        const newEdgesCount = Object.keys(hEdges).length + Object.keys(vEdges).length;
+
+        if (newEdgesCount > prevEdgesCount) {
+          if (newBoxesCount > prevBoxesCount) playBoxSound();
+          else playLineSound();
+        }
+
+        if (status === 'playing') {
+          document.getElementById('winnerModal').classList.add('hidden');
+        }
+
+        renderBoard();
+        updateGameUI();
+
+        if (status === 'finished' && oldStatus !== 'finished') {
+          playWinSound();
+          showWinnerModal();
+        }
+      });
+    }
+
+    async function requestRematch() {
+      document.getElementById('winnerModal').classList.add('hidden');
+      if (gameMode === 'ai') {
+        clearTimeout(aiTimeout);
+        resetBoardState(rows, cols);
+        renderBoard();
+        updateGameUI();
+      } else if (gameMode === 'online' && roomCode && window.fb) {
+        resetBoardState(rows, cols);
+        status = p2Name ? 'playing' : 'waiting';
+        const roomRef = window.fb.doc(window.fb.db, 'dot_rooms', roomCode);
+        await window.fb.updateDoc(roomRef, {
+          hEdges: {},
+          vEdges: {},
+          boxes: {},
+          turn: 1,
+          scores: { 1: 0, 2: 0 },
+          status
+        });
+      }
+    }
+
+    function leaveGame() {
+      clearTimeout(aiTimeout);
+      if (unsubscribeRoom) {
+        unsubscribeRoom();
+        unsubscribeRoom = null;
+      }
+      roomCode = null;
+      gameMode = null;
+      document.getElementById('winnerModal').classList.add('hidden');
+      document.getElementById('gameScreen').classList.add('hidden');
+      document.getElementById('lobbyScreen').classList.remove('hidden');
+    }
+
+    function showGameScreen() {
+      document.getElementById('lobbyScreen').classList.add('hidden');
+      document.getElementById('gameScreen').classList.remove('hidden');
+      renderBoard();
+      updateGameUI();
+    }
+
+    function copyRoomCode() {
+      if (!roomCode) return;
+      navigator.clipboard?.writeText(roomCode);
+      showToast(t('copiedCode'));
+    }
+
+    function copyInviteLink() {
+      if (!roomCode) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', roomCode);
+      navigator.clipboard?.writeText(url.toString());
+      showToast(t('copiedLink'));
+    }
+
+    // ==================== RENDERING & UI ====================
+    function updateGameUI() {
+      document.getElementById('p1NameDisplay').textContent = p1Name;
+      document.getElementById('p2NameDisplay').textContent = p2Name || t('defaultP2');
+      document.getElementById('p1ScoreDisplay').textContent = toLocalNum(scores[1] || 0);
+      document.getElementById('p2ScoreDisplay').textContent = toLocalNum(scores[2] || 0);
+      document.getElementById('boardDimLabel').textContent = `${toLocalNum(rows)} × ${toLocalNum(cols)} ${t('boxesText')}`;
+
+      const p1Card = document.getElementById('p1Card');
+      const p2Card = document.getElementById('p2Card');
+      const turnEl = document.getElementById('turnIndicator');
+
+      if (turn === 1) {
+        p1Card.classList.add('border-sky-500', 'bg-sky-950/30');
+        p1Card.classList.remove('border-transparent');
+        p2Card.classList.remove('border-rose-500', 'bg-rose-950/30');
+        p2Card.classList.add('border-transparent');
+      } else {
+        p2Card.classList.add('border-rose-500', 'bg-rose-950/30');
+        p2Card.classList.remove('border-transparent');
+        p1Card.classList.remove('border-sky-500', 'bg-sky-950/30');
+        p1Card.classList.add('border-transparent');
+      }
+
+      if (gameMode === 'online') {
+        const connBadge = document.getElementById('connectionBadge');
+        if (status === 'waiting') {
+          connBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span><span>${t('waitingOpponent')}</span>`;
+        } else {
+          connBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span class="text-emerald-300">${t('connectedOpponent')}</span>`;
+        }
+      }
+
+      const isMyTurn = (gameMode === 'ai' && turn === 1) || (gameMode === 'online' && turn === myRole);
+      if (status === 'waiting') {
+        turnEl.textContent = '⏳ ...';
+        turnEl.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+      } else if (isMyTurn) {
+        turnEl.textContent = t('yourTurn');
+        turnEl.className = turn === 1
+          ? 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-sky-500/25 text-sky-200 border border-sky-400/50 shadow'
+          : 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-rose-500/25 text-rose-200 border border-rose-400/50 shadow';
+      } else {
+        turnEl.textContent = gameMode === 'ai' ? t('aiTurn') : t('oppTurn');
+        turnEl.className = 'px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-slate-800 text-slate-300 border border-slate-700';
+      }
+    }
+
+    function showWinnerModal() {
+      const s1 = scores[1] || 0;
+      const s2 = scores[2] || 0;
+      document.getElementById('winnerTitle').textContent = t('gameOver');
+      document.getElementById('modalP1Name').textContent = p1Name;
+      document.getElementById('modalP2Name').textContent = p2Name;
+      document.getElementById('modalP1Score').textContent = toLocalNum(s1);
+      document.getElementById('modalP2Score').textContent = toLocalNum(s2);
+
+      if (s1 > s2) {
+        document.getElementById('winnerEmoji').textContent = '🏆';
+        document.getElementById('winnerSubtitle').textContent = `${p1Name} ${t('wonSuffix')}`;
+      } else if (s2 > s1) {
+        document.getElementById('winnerEmoji').textContent = gameMode === 'ai' ? '🤖' : '🏆';
+        document.getElementById('winnerSubtitle').textContent = `${p2Name} ${t('wonSuffix')}`;
+      } else {
+        document.getElementById('winnerEmoji').textContent = '🤝';
+        document.getElementById('winnerSubtitle').textContent = t('drawGame');
+      }
+
+      document.getElementById('winnerModal').classList.remove('hidden');
+    }
+
+    function renderBoard() {
+      const svg = document.getElementById('boardSvg');
+      const pad = 28;
+      const cell = 64;
+      const width = pad * 2 + cols * cell;
+      const height = pad * 2 + rows * cell;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const canInteract = status === 'playing' && ((gameMode === 'ai' && turn === 1) || (gameMode === 'online' && turn === myRole));
+      const previewColor = turn === 1 ? '#38bdf8' : '#fb7185';
+
+      let html = '';
+
+      // 1. Completed Boxes
+      const p1Initial = (p1Name || 'P1').trim().charAt(0).toUpperCase();
+      const p2Initial = (p2Name || 'P2').trim().charAt(0).toUpperCase();
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const owner = boxes[`${r},${c}`];
+          if (owner) {
+            const x = pad + c * cell + 5;
+            const y = pad + r * cell + 5;
+            const size = cell - 10;
+            const fill = owner === 1 ? 'rgba(56, 189, 248, 0.24)' : 'rgba(251, 113, 133, 0.24)';
+            const stroke = owner === 1 ? 'rgba(56, 189, 248, 0.45)' : 'rgba(251, 113, 133, 0.45)';
+            const textColor = owner === 1 ? '#7dd3fc' : '#fda4af';
+            const label = owner === 1 ? p1Initial : (gameMode === 'ai' ? 'AI' : p2Initial);
+
+            html += `
+              <g class="box-pop">
+                <rect x="${x}" y="${y}" width="${size}" height="${size}" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />
+                <text x="${pad + c * cell + cell / 2}" y="${pad + r * cell + cell / 2 + 6}" text-anchor="middle" fill="${textColor}" font-size="18" font-weight="800">${label}</text>
+              </g>
+            `;
+          }
+        }
+      }
+
+      // 2. Horizontal Edges
+      for (let r = 0; r <= rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x1 = pad + c * cell;
+          const y1 = pad + r * cell;
+          const x2 = x1 + cell;
+          const owner = hEdges[`${r},${c}`];
+
+          if (owner) {
+            const color = owner === 1 ? '#38bdf8' : '#fb7185';
+            html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y1}" stroke="${color}" stroke-width="7" stroke-linecap="round" />`;
+          } else {
+            html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y1}" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />`;
+            if (canInteract) {
+              html += `
+                <g class="edge-hit" onclick="handleMove('h', ${r}, ${c})">
+                  <line class="edge-preview" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y1}" stroke="${previewColor}" stroke-width="7" stroke-linecap="round" />
+                  <rect x="${x1 + 6}" y="${y1 - 14}" width="${cell - 12}" height="28" fill="transparent" />
+                </g>
+              `;
+            }
+          }
+        }
+      }
+
+      // 3. Vertical Edges
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c <= cols; c++) {
+          const x1 = pad + c * cell;
+          const y1 = pad + r * cell;
+          const y2 = y1 + cell;
+          const owner = vEdges[`${r},${c}`];
+
+          if (owner) {
+            const color = owner === 1 ? '#38bdf8' : '#fb7185';
+            html += `<line x1="${x1}" y1="${y1}" x2="${x1}" y2="${y2}" stroke="${color}" stroke-width="7" stroke-linecap="round" />`;
+          } else {
+            html += `<line x1="${x1}" y1="${y1}" x2="${x1}" y2="${y2}" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />`;
+            if (canInteract) {
+              html += `
+                <g class="edge-hit" onclick="handleMove('v', ${r}, ${c})">
+                  <line class="edge-preview" x1="${x1}" y1="${y1}" x2="${x1}" y2="${y2}" stroke="${previewColor}" stroke-width="7" stroke-linecap="round" />
+                  <rect x="${x1 - 14}" y="${y1 + 6}" width="28" height="${cell - 12}" fill="transparent" />
+                </g>
+              `;
+            }
+          }
+        }
+      }
+
+      // 4. Dots on top
+      for (let r = 0; r <= rows; r++) {
+        for (let c = 0; c <= cols; c++) {
+          const cx = pad + c * cell;
+          const cy = pad + r * cell;
+          html += `<circle cx="${cx}" cy="${cy}" r="6.5" fill="#f8fafc" stroke="#0f172a" stroke-width="2" />`;
+        }
+      }
+
+      svg.innerHTML = html;
+    }
+
+    // ==================== INIT ====================
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedName = localStorage.getItem('dot_game_player_name');
+      if (savedName) document.getElementById('playerNameInput').value = savedName;
+
+      updateGridFromSliders();
+      applyLanguage();
+
+      // Check URL parameter ?room=XXXXX
+      const params = new URLSearchParams(window.location.search);
+      const urlRoom = params.get('room');
+      if (urlRoom && /^\d{5}$/.test(urlRoom)) {
+        switchTab('join');
+        document.getElementById('roomCodeInput').value = urlRoom;
+      }
+    });
+  </script>
+</body>
+</html>
